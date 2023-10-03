@@ -1,0 +1,139 @@
+#include <SPI.h>
+
+#include <Wire.h>
+
+#include <Adafruit_GFX.h>
+
+#include <Adafruit_SSD1306.h>
+
+#include <Fonts/FreeSerif9pt7b.h>
+
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+
+#define OLED_RESET     4 // Reset pin 
+//(or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+/*volatile int flow_frequency; // Measures flow sensor pulses
+  unsigned int l_min; // Calculated litres/min
+  float total;
+  unsigned char flowsensor = 2; // Sensor Input
+  unsigned long currentTime;
+  unsigned long cloopTime;*/
+
+int X;
+int Y;
+float TIME = 0;
+float FREQUENCY = 0;
+float WATER = 0;
+float TOTAL = 0;
+float LS = 0;
+const int input = 2;
+
+/*void flow () // Interrupt function
+{
+  flow_frequency++;
+}*/
+void setup()
+{
+  Serial.begin(9600);
+
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;); // Don't proceed, loop forever
+  } 
+
+  // Clear the buffer
+  display.clearDisplay();
+
+  display.setFont(&FreeSerif9pt7b);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(10, 20);
+  display.println("Hello, world!");
+  display.display();
+  delay(2000);
+
+  pinMode(input, INPUT);
+  /*digitalWrite(flowsensor, HIGH); // Optional Internal Pull-Up
+    attachInterrupt(0, flow, RISING); // Setup Interrupt
+    sei(); // Enable interrupts
+    currentTime = millis();
+    cloopTime = currentTime;*/
+
+
+}
+void loop ()
+{
+  X = pulseIn(input, HIGH);
+  Y = pulseIn(input, LOW);
+  TIME = X + Y;
+  FREQUENCY = 1000000 / TIME;
+  WATER = FREQUENCY / 7.5;
+  LS = WATER / 60;
+  if (FREQUENCY >= 0)
+  {
+    if (isinf(FREQUENCY))
+    {
+      display.clearDisplay();
+      display.setCursor(0, 20);
+      display.print("VOL. :0.00");
+      display.print(" L/M");
+      display.setCursor(0, 45);
+      display.print("TOTAL:");
+      display.print( TOTAL);
+      display.print(" L");
+      display.display();
+    }
+    else
+    {
+      TOTAL = TOTAL + LS;
+      Serial.println(FREQUENCY);
+      display.clearDisplay();
+      display.setCursor(0, 20);
+      display.print("VOL.: ");
+      display.print(WATER);
+      display.print(" L/M");
+      display.setCursor(0, 45);
+      display.print("TOTAL:");
+      display.print( TOTAL);
+      display.print(" L");
+      display.display();
+    }
+  }
+  delay(1000);
+
+
+
+
+  /*currentTime = millis();
+    // Every second, calculate and print litres/hour
+    if (currentTime >= (cloopTime + 1000))
+    {
+    cloopTime = currentTime; // Updates cloopTime
+    // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
+    l_min = (flow_frequency / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
+    flow_frequency = 0; // Reset Counter
+    Serial.print(l_min, DEC); // Print litres/hour
+    Serial.print(" L/M \t");
+
+    total = total + l_min / 60;
+    Serial.print(float(l_min / 60)); // Print litres/hour
+    Serial.println(" L");
+
+    display.clearDisplay();
+    display.setCursor(0, 15);
+    display.print("Current :-");
+    display.print(l_min);
+    display.println(" L/M");
+    display.display();
+    }*/
+}
+
